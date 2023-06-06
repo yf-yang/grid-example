@@ -154,7 +154,7 @@ export default function App() {
             if (i === "+") {
               const { x, y } = item;
               return (
-                <div key={`+${index}`} data-grid={item}>
+                <div key={`+${index}`} data-grid={item} className="addblock">
                   <span
                     className="text"
                     onClick={(e) => {

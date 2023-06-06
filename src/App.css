@@ -29,6 +29,23 @@ body {
   box-sizing: border-box;
 }
 
+.addblock {
+  box-sizing: border-box;
+  opacity:0.2;
+}
+
+.addblock .text{
+  opacity:0;
+}
+
+.addblock:hover {
+  opacity:1;
+}
+
+.addblock .text:hover {
+  opacity:1;
+}
+
 .react-grid-item:not(.react-grid-placeholder) {
   background: #ccc;
   border: 1px solid black;
