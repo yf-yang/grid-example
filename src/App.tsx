@@ -22,6 +22,10 @@ const options: Option[] = [
   { type: "C", h: 3, w: 2 },
 ];
 
+function filterAddItem(layout: Layout[]): Layout[] {
+  return layout.filter((item) => !item.i.startsWith("+"));
+}
+
 export default function App() {
   const [items, setItems] = useState<Layout[]>([]);
   const [counter, setCounter] = useState(0);
@@ -34,49 +38,47 @@ export default function App() {
   const onRemoveItem = (i: string) => {
     console.log("removing", i);
     setItems((prevItems) => {
-      console.log(prevItems);
-      const abc = prevItems
-        .filter((item) => item.i !== i)
-        .filter((item) => item.i !== "+");
-      console.log(abc);
-      return abc;
+      return filterAddItem(prevItems.filter((item) => item.i !== i));
     });
   };
 
   const onMouseEnter = () => {
-    console.log(items);
-    let maxRow = -1;
-    const occupiedPositions = new Set(
-      items
-        .map((item) => {
-          const { h, w, x, y } = item;
-          maxRow = y + h > maxRow ? y + h : maxRow;
-          return _.range(h)
-            .map((i) => _.range(w).map((j) => [i, j] as const))
-            .flat()
-            .map(([i, j]) => (y + i) * 12 + x + j);
-        })
+    setItems((prev) => {
+      let maxRow = -1;
+      const occupiedPositions = new Set(
+        prev
+          .map((item) => {
+            const { h, w, x, y } = item;
+            maxRow = y + h > maxRow ? y + h : maxRow;
+            return _.range(h)
+              .map((i) => _.range(w).map((j) => [i, j]))
+              .flat()
+              .map(([i, j]) => (y + i) * 12 + x + j);
+          })
+          .flat()
+      );
+      maxRow = maxRow === -1 ? 3 : maxRow;
+      const emptyPositions = _.range(maxRow)
+        .map((i) => _.range(12).map((j) => [i, j] as const))
         .flat()
-    );
-    maxRow = maxRow === -1 ? 3 : maxRow;
-    const emptyPositions = _.range(maxRow)
-      .map((i) => _.range(12).map((j) => [i, j] as const))
-      .flat()
-      .filter(([i, j]) => !occupiedPositions.has(i * 12 + j));
+        .filter(([i, j]) => !occupiedPositions.has(i * 12 + j));
 
-    setItems((items) => [
-      ...items,
-      ...emptyPositions.map(([y, x], index) => ({
-        x,
-        y,
-        h: 1,
-        w: 1,
-        i: "+",
-      })),
-    ]);
+      return [
+        ...prev,
+        ...emptyPositions.map(([y, x], index) => ({
+          x,
+          y,
+          h: 1,
+          w: 1,
+          i: "+",
+          isDraggable: false,
+          isResizable: false,
+        })),
+      ];
+    });
   };
   const onMouseLeave = () => {
-    setItems((items) => items.filter((item) => item.i !== "+"));
+    setItems((items) => filterAddItem(items));
   };
   return (
     <>
@@ -86,29 +88,23 @@ export default function App() {
         // style={{ height: "130px" }}
       >
         <GridLayout
-          resizeHandles={[]}
+          resizeHandles={["s", "w", "e", "n", "sw", "nw", "se", "ne"]}
           className="layout"
           preventCollision
           compactType={null}
           cols={12}
           rowHeight={30}
           width={1300}
-          // onResizeStart={(_layout, item) => {
-          //   console.log("onResizeStart");
-          //   if (item.i.startsWith("+")) {
-          //     return;
-          //   }
-          //   console.log("remove");
-          //   setItems((items) => items.filter((item) => item.i !== "+"));
-          // }}
+          onLayoutChange={setItems}
+          onResizeStart={() => {
+            console.log("onResizeStart");
+            setItems((items) => filterAddItem(items));
+          }}
           isDroppable={true}
-          // onDragStart={(_layout, item) => {
-          //   console.log("onDragStart");
-          //   if (item.i === "+") {
-          //     return;
-          //   }
-          //   setItems((items) => items.filter((item) => item.i !== "+"));
-          // }}
+          onDragStart={() => {
+            console.log("onDragStart");
+            setItems((items) => filterAddItem(items));
+          }}
           // onDragStop={(_layout, item, newItem) => {
           //   console.log("onDragStop");
           //   setItems((items) => [
@@ -151,7 +147,7 @@ export default function App() {
               cursor: "pointer",
             } as React.CSSProperties;
             const i = item.i;
-            if (i === "+") {
+            if (i.startsWith("+")) {
               const { x, y } = item;
               return (
                 <div key={`+${index}`} data-grid={item} className="addblock">
@@ -225,16 +221,6 @@ export default function App() {
                       h: option.h,
                       w: option.w,
                       i: `${option.type}${counter}`,
-                      resizeHandles: [
-                        "s",
-                        "w",
-                        "e",
-                        "n",
-                        "sw",
-                        "nw",
-                        "se",
-                        "ne",
-                      ],
                     },
                   ]);
                   setAdding(undefined);
