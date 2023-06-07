@@ -59,12 +59,8 @@ function fillWithAddItem(layout: Layout[]): Layout[] {
 export default function App() {
   const [items, setItems] = useState<Layout[]>([]);
   const [counter, setCounter] = useState(0);
-  const [adding, setAdding] = useState<{ x: number; y: number } | undefined>();
   const draggingRef = useRef<Option | undefined>();
 
-  const onAddItem = (x: number, y: number) => {
-    setAdding({ x, y });
-  };
   const onRemoveItem = (i: string) => {
     console.log("removing", i);
     setItems((prevItems) => {
