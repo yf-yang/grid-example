@@ -2,25 +2,21 @@ import GridLayout, { Layout } from "react-grid-layout";
 import "./App.css";
 import { useRef, useState } from "react";
 import * as _ from "lodash";
+import { Button, Dropdown } from "antd";
+import { ItemType } from "antd/es/menu/hooks/useItems";
 
-interface Option {
-  type: string;
-  h: number;
-  w: number;
-}
-const options: Option[] = [
-  {
-    type: "A",
-    h: 1,
-    w: 1,
-  },
-  {
-    type: "B",
-    h: 2,
-    w: 1,
-  },
-  { type: "C", h: 3, w: 2 },
-];
+type Option = ItemType & { h: number; w: number };
+const optionMap: Record<string, { h: number; w: number }> = {
+  A: { h: 1, w: 1 },
+  B: { h: 2, w: 1 },
+  C: { h: 3, w: 2 },
+};
+const options: Option[] = Object.entries(optionMap).map(([k, { h, w }]) => ({
+  key: k,
+  label: `${k}: ${h} x ${w}`,
+  h,
+  w,
+}));
 
 function filterAddItem(layout: Layout[]): Layout[] {
   return layout.filter((item) => !item.i.startsWith("+"));
@@ -160,18 +156,30 @@ export default function App() {
             } as React.CSSProperties;
             const i = item.i;
             if (i.startsWith("+")) {
-              const { x, y } = item;
               return (
                 <div key={`+${index}`} data-grid={item} className="addblock">
-                  <span
-                    className="text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddItem(x, y);
+                  <Dropdown
+                    menu={{
+                      items: options,
+                      onClick: ({ key }) => {
+                        setItems((prevItems) => [
+                          ...filterAddItem(prevItems),
+                          {
+                            x: item.x,
+                            y: item.y,
+                            h: optionMap[key].h,
+                            w: optionMap[key].w,
+                            i: `${key}${counter}`,
+                          },
+                        ]);
+                        setCounter((prevCounter) => prevCounter + 1);
+                      },
                     }}
+                    placement="bottomLeft"
+                    arrow
                   >
-                    +
-                  </span>
+                    <Button>+</Button>
+                  </Dropdown>
                 </div>
               );
             }
@@ -193,58 +201,6 @@ export default function App() {
           })}
         </GridLayout>
       </div>
-      {adding !== undefined ? (
-        <>
-          {/* {options.map((option) => (
-            <div
-              key={option.type}
-              className="droppable-element"
-              draggable={true}
-              unselectable="on"
-              // this is a hack for firefox
-              // Firefox requires some kind of initialization
-              // which we can do by adding this attribute
-              // @see https://bugzilla.mozilla.org/show_bug.cgi?id=568313
-              onDragStart={(e) => {
-                e.dataTransfer.setData("text/plain", "");
-                draggingRef.current = option;
-              }}
-              onDragEnd={() => {
-                setAdding(false);
-                draggingRef.current = undefined;
-              }}
-            >
-              {option.type}: {option.w}x{option.h}
-            </div>
-          ))} */}
-
-          {options.map((option) => (
-            <div>
-              <button
-                key={option.type}
-                onClick={(e) => {
-                  console.log("click");
-                  e.stopPropagation();
-                  setItems((prevItems) => [
-                    ...prevItems,
-                    {
-                      x: adding.x,
-                      y: adding.y,
-                      h: option.h,
-                      w: option.w,
-                      i: `${option.type}${counter}`,
-                    },
-                  ]);
-                  setAdding(undefined);
-                  setCounter((prevCounter) => prevCounter + 1);
-                }}
-              >
-                {option.type}: {option.w}x{option.h}
-              </button>
-            </div>
-          ))}
-        </>
-      ) : undefined}
     </>
   );
 }
