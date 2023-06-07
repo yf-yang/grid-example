@@ -26,6 +26,40 @@ function filterAddItem(layout: Layout[]): Layout[] {
   return layout.filter((item) => !item.i.startsWith("+"));
 }
 
+function fillWithAddItem(layout: Layout[]): Layout[] {
+  let maxRow = -1;
+  const occupiedPositions = new Set(
+    layout
+      .map((item) => {
+        const { h, w, x, y } = item;
+        maxRow = y + h > maxRow ? y + h : maxRow;
+        return _.range(h)
+          .map((i) => _.range(w).map((j) => [i, j]))
+          .flat()
+          .map(([i, j]) => (y + i) * 12 + x + j);
+      })
+      .flat()
+  );
+  maxRow = maxRow === -1 ? 3 : maxRow;
+  const emptyPositions = _.range(maxRow)
+    .map((i) => _.range(12).map((j) => [i, j] as const))
+    .flat()
+    .filter(([i, j]) => !occupiedPositions.has(i * 12 + j));
+
+  return [
+    ...layout,
+    ...emptyPositions.map(([y, x], index) => ({
+      x,
+      y,
+      h: 1,
+      w: 1,
+      i: "+",
+      isDraggable: false,
+      isResizable: false,
+    })),
+  ];
+}
+
 export default function App() {
   const [items, setItems] = useState<Layout[]>([]);
   const [counter, setCounter] = useState(0);
@@ -43,50 +77,14 @@ export default function App() {
   };
 
   const onMouseEnter = () => {
-    setItems((prev) => {
-      let maxRow = -1;
-      const occupiedPositions = new Set(
-        prev
-          .map((item) => {
-            const { h, w, x, y } = item;
-            maxRow = y + h > maxRow ? y + h : maxRow;
-            return _.range(h)
-              .map((i) => _.range(w).map((j) => [i, j]))
-              .flat()
-              .map(([i, j]) => (y + i) * 12 + x + j);
-          })
-          .flat()
-      );
-      maxRow = maxRow === -1 ? 3 : maxRow;
-      const emptyPositions = _.range(maxRow)
-        .map((i) => _.range(12).map((j) => [i, j] as const))
-        .flat()
-        .filter(([i, j]) => !occupiedPositions.has(i * 12 + j));
-
-      return [
-        ...prev,
-        ...emptyPositions.map(([y, x], index) => ({
-          x,
-          y,
-          h: 1,
-          w: 1,
-          i: "+",
-          isDraggable: false,
-          isResizable: false,
-        })),
-      ];
-    });
+    setItems(fillWithAddItem);
   };
   const onMouseLeave = () => {
     setItems((items) => filterAddItem(items));
   };
   return (
     <>
-      <div
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        // style={{ height: "130px" }}
-      >
+      <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
         <GridLayout
           resizeHandles={["s", "w", "e", "n", "sw", "nw", "se", "ne"]}
           className="layout"
@@ -95,15 +93,29 @@ export default function App() {
           cols={12}
           rowHeight={30}
           width={1300}
-          onLayoutChange={setItems}
+          onLayoutChange={(layout) => {
+            setItems((prev) =>
+              // If prev has +, it suggests we added it in other callbacks, follow it.
+              // It allows onResizeStop and OnDragStop add addItem blocks
+              prev.some((item) => item.i.startsWith("+")) ? prev : layout
+            );
+          }}
           onResizeStart={() => {
             console.log("onResizeStart");
             setItems((items) => filterAddItem(items));
+          }}
+          onResizeStop={(layout) => {
+            console.log("onResizeStop");
+            setItems(fillWithAddItem(layout));
           }}
           isDroppable={true}
           onDragStart={() => {
             console.log("onDragStart");
             setItems((items) => filterAddItem(items));
+          }}
+          onDragStop={(layout) => {
+            console.log("onDragStop");
+            setItems(fillWithAddItem(layout));
           }}
           // onDragStop={(_layout, item, newItem) => {
           //   console.log("onDragStop");
