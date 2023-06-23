@@ -78,7 +78,7 @@ export default function App() {
     <>
       <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
         <GridLayout
-          resizeHandles={["s", "w", "e", "n", "sw", "nw", "se", "ne"]}
+          resizeHandles={["s", "e", "se"]}
           className="layout"
           preventCollision
           compactType={null}
