@@ -174,7 +174,7 @@ export default function App() {
                     placement="bottomLeft"
                     arrow
                   >
-                    <Button>+</Button>
+                    <Button className="text">+</Button>
                   </Dropdown>
                 </div>
               );
@@ -182,7 +182,7 @@ export default function App() {
             return (
               <div key={i} data-grid={item}>
                 <span className="text">{i}</span>
-                <button
+                <Button
                   className="remove"
                   style={removeStyle}
                   onClick={(e) => {
@@ -190,8 +190,8 @@ export default function App() {
                     onRemoveItem(i);
                   }}
                 >
-                  x
-                </button>
+                  ×
+                </Button>
               </div>
             );
           })}
